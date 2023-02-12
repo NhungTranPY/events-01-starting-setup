@@ -84,6 +84,7 @@ class ProjectItem {
     this.updateProjectListsHandler = updateProjectListsFunction;
     this.connectMoreInfoButton();
     this.connectSwitchButton(type);
+    this.connectDrag()
   }
 
   showMoreInfoHandler() {
@@ -101,6 +102,17 @@ class ProjectItem {
     );
     tooltip.attach();
     this.hasActiveTooltip = true;
+  }
+
+  connectDrag() {
+    const item = document.getElementById(this.id)
+    item.addEventListener('dragstart', e => {
+      e.dataTransfer.setData('text/plain', this.id)
+      e.dataTransfer.effectAllowed = 'move'
+    })
+    item.addEventListener('dragend', e => {
+      console.log(e);
+    })
   }
 
   connectMoreInfoButton() {
@@ -140,6 +152,37 @@ class ProjectList {
       );
     }
     console.log(this.projects);
+    this.connectDroppable()
+  }
+
+  connectDroppable() {
+    const list = document.querySelector(`#${this.type}-projects ul`)
+
+    list.addEventListener('dragenter', (e) => {
+      if (e.dataTransfer.types[0] === 'text/plain') {
+        list.parentElement.classList.add('droppable')
+        e.preventDefault()
+      }
+    })
+    list.addEventListener('dragover', (e) => {
+      if (e.dataTransfer.types[0] === 'text/plain') {
+        e.preventDefault()
+      }
+    })
+    list.addEventListener('dragleave', e => {
+      if(e.relatedTarget.closest(`#${this.type}-projects ul`) !== list) {
+        list.parentElement.classList.remove('droppable')
+      }
+    })
+    list.addEventListener('drop', e => {
+      const prjId = e.dataTransfer.getData('text/plain')
+      if (this.projects.find(p => p.id === prjId)) {
+        return
+      }
+      document.getElementById(prjId).querySelector('button:last-of-type').click()
+      list.parentElement.classList.remove('droppable')
+      // e.preventDefault() // not required
+    })
   }
 
   setSwitchHandlerFunction(switchHandlerFunction) {
@@ -171,11 +214,11 @@ class App {
       activeProjectsList.addProject.bind(activeProjectsList)
     );
 
-    const timerId = setTimeout(this.startAnalytics, 3000);
+    // const timerId = setTimeout(this.startAnalytics, 3000);
 
-    document.getElementById('stop-analytics-btn').addEventListener('click', () => {
-      clearTimeout(timerId);
-    });
+    // document.getElementById('stop-analytics-btn').addEventListener('click', () => {
+    //   clearTimeout(timerId);
+    // });
   }
 
   static startAnalytics() {
